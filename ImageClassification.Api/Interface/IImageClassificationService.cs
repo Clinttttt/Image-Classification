@@ -1,9 +1,10 @@
-﻿using ImageClassification.Api.Models;
+﻿using ImageClassification.Api.Helper;
+using ImageClassification.Api.Models;
 
 namespace ImageClassification.Api.Interface
 {
     public interface IImageClassificationService
     {
-        PredictionResult ClassifyImage(byte[] imageData);
+        Result<PredictionResult> ClassifyImage(Result<byte[]> request);
     }
 }

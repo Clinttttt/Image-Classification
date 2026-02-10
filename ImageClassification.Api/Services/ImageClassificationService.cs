@@ -1,4 +1,5 @@
-﻿using ImageClassification.Api.Interface;
+﻿using ImageClassification.Api.Helper;
+using ImageClassification.Api.Interface;
 using ImageClassification.Api.Models;
 using Microsoft.ML;
 using System.Runtime.CompilerServices;
@@ -9,7 +10,7 @@ namespace ImageClassification.Api.Services
     {
         private readonly PredictionEngine<ImageData, ImagePrediction> prediction_engine;
         private readonly MLContext ml_context;
-
+        private string? message { get; set; }
         public ImageClassificationService(string model_path)
         {
             ml_context = new MLContext();
@@ -21,43 +22,39 @@ namespace ImageClassification.Api.Services
             prediction_engine = ml_context.Model.CreatePredictionEngine<ImageData, ImagePrediction>(trained_model);
 
         }
-        public PredictionResult ClassifyImage(byte[] image_data)
+
+        
+        public Result<PredictionResult> ClassifyImage(Result<byte[]> request)
         {
             string temp_image_path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.jpg");
 
             try
             {
-                File.WriteAllBytes(temp_image_path, image_data);
-
+                File.WriteAllBytes(temp_image_path, request.value!);
                 var image_input = new ImageData { ImageSource = temp_image_path };
-
                 var prediction = prediction_engine.Predict(image_input);
 
 
                 if (prediction.Score == null || prediction.Score.Length == 0)
-                    throw new Exception("Prediction score array is empty.");
+                   return Result<PredictionResult>.Failure("Prediction score array is empty.");
 
                 // get confidence
                 float max_score = prediction.Score.Max();
 
                 const float threshold = 0.8f;
-                string predictedClass;
+  
+                prediction.PredictedLabel = max_score < threshold ? "Unkown"  : prediction.PredictedLabel!;
 
-                if (max_score < threshold)
-                {
-                    predictedClass = "Unknown";
-                }
-                else
-                {
-                    predictedClass = prediction.PredictedLabel!;
-                }
+                var dto = ImageClassification.Api.Helper.Helper.HelperResult(prediction.PredictedLabel);
 
-                return new PredictionResult
+                var result = new PredictionResult
                 {
-                    Message = predictedClass == "Unknown" ? "This animal does not exist in training data" : $"This is a {predictedClass}",
+                    Message = dto.description,
+                    type = dto.type,
                     Confidence = max_score,
-                    PredictedClass = predictedClass
+                    PredictedClass = dto.Name,
                 };
+                return Result<PredictionResult>.Success(result);
             }
             finally
             {
@@ -66,6 +63,9 @@ namespace ImageClassification.Api.Services
             }
         }
     }
+
+
+
 
 
 }
