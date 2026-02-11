@@ -1,18 +1,13 @@
+using ImageClassification.Api;
 using ImageClassification.Api.Interface;
+using ImageClassification.Api.Models;
 using ImageClassification.Api.Services;
+using Microsoft.Extensions.ML;
 
 var builder = WebApplication.CreateBuilder(args);
 
 
-
-builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-
-string modelPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "MLModel.zip");
-
-builder.Services.AddSingleton<IImageClassificationService>(sp =>
-    new ImageClassificationService(modelPath));
+builder.Services.AddApi();
 
 var app = builder.Build();
 

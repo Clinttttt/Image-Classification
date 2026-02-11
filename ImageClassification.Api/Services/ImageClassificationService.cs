@@ -1,6 +1,7 @@
 ﻿using ImageClassification.Api.Helper;
 using ImageClassification.Api.Interface;
 using ImageClassification.Api.Models;
+using Microsoft.Extensions.ML;
 using Microsoft.ML;
 using System.Runtime.CompilerServices;
 
@@ -8,19 +9,12 @@ namespace ImageClassification.Api.Services
 {
     public class ImageClassificationService : IImageClassificationService
     {
-        private readonly PredictionEngine<ImageData, ImagePrediction> prediction_engine;
-        private readonly MLContext ml_context;
+        private readonly PredictionEnginePool<ImageData, ImagePrediction> prediction_engine_pool;
+
         private string? message { get; set; }
-        public ImageClassificationService(string model_path)
+        public ImageClassificationService(PredictionEnginePool<ImageData, ImagePrediction> prediction_engine_pool)
         {
-            ml_context = new MLContext();
-
-            //trained model ni
-            ITransformer trained_model = ml_context.Model.Load(model_path, out var model_schema);
-
-            //create prediction ni
-            prediction_engine = ml_context.Model.CreatePredictionEngine<ImageData, ImagePrediction>(trained_model);
-
+            this.prediction_engine_pool = prediction_engine_pool;     
         }
 
         
@@ -32,7 +26,7 @@ namespace ImageClassification.Api.Services
             {
                 File.WriteAllBytes(temp_image_path, request.value!);
                 var image_input = new ImageData { ImageSource = temp_image_path };
-                var prediction = prediction_engine.Predict(image_input);
+                var prediction = prediction_engine_pool.Predict(image_input);
 
 
                 if (prediction.Score == null || prediction.Score.Length == 0)

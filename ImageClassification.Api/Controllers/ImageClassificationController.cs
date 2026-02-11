@@ -23,7 +23,7 @@ namespace ImageClassification.Api.Controllers
             var helper_byte = await ImageClassification.Api.Helper.Helper.HelperResult(image);
             if (!helper_byte.is_success)
                 return BadRequest(helper_byte.error);
-            var result = _classification_service.ClassifyImage(helper_byte);
+            var result =  _classification_service.ClassifyImage(helper_byte);
             return HandleResponse(result);        
         }
 
